@@ -21,7 +21,7 @@ setup(
     license="MIT",
     packages=find_packages(exclude=("tests.*", "tests")),
     python_requires=">=3.5",
-    install_requires=["Django>=1.11", "djangorestframework>=3.0", "requests", "python-jose[cryptography]"],
+    install_requires=["Django>=1.11", "djangorestframework>=3.0", "requests", "python-jose"],
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",

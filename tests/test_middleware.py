@@ -18,7 +18,7 @@ from unittest import TestCase
 from rest_framework import exceptions
 from jose.jwt import ExpiredSignatureError, JWTError
 
-from cognito_code_grant.middleware import \
+from cognito_code_grant.authentication import \
     CognitoAuthentication, _verify_token_and_decode, _fetch_cognito_keys, _refresh_tokens
 
 TEST_COGNITO_RESPONSE = {'email': 'test@email.com', 'cognito:username': 'test_cognito_id', 'cognito:groups': ['test_group']}
@@ -29,7 +29,7 @@ TEST_GROUPS = [
 ]
 
 class CognitoAuthTestCase(DjangoTestCase):
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
     def test_valid_access_token_and_id_token_creates_user(self, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -57,7 +57,7 @@ class CognitoAuthTestCase(DjangoTestCase):
         self.assertEqual(user.groups.count(), 1)
         self.assertEqual(group.id, user.groups.all()[0].id)
 
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
     def test_valid_access_token_and_id_token_sets_existing_user(self, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -77,7 +77,7 @@ class CognitoAuthTestCase(DjangoTestCase):
             ])
         self.assertEqual(set_user.username, existing_user.username)
 
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
     def test_valid_access_token_and_id_token_dont_update_existing_groups(self, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -108,7 +108,7 @@ class CognitoAuthTestCase(DjangoTestCase):
             ])
         self.assertEqual(set_user.username, existing_user.username)
 
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
     def test_invalid_access_token_401(self, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -123,8 +123,8 @@ class CognitoAuthTestCase(DjangoTestCase):
             set_user, auth = auth.authenticate(request)
 
 
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
-    @mock.patch('cognito_code_grant.middleware._refresh_tokens')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._refresh_tokens')
     def test_fetches_new_tokens_if_expired(self, mock_refresh_token, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -148,8 +148,8 @@ class CognitoAuthTestCase(DjangoTestCase):
         self.assertEqual(request.session['id_token'], 'new_id_token')
 
 
-    @mock.patch('cognito_code_grant.middleware._verify_token_and_decode')
-    @mock.patch('cognito_code_grant.middleware._refresh_tokens')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
+    @mock.patch('cognito_code_grant.authentication._refresh_tokens')
     def test_401_if_bad_refresh_token(self, mock_refresh_token, mock_verify_token):
         auth = CognitoAuthentication()
         request = mock.MagicMock()
@@ -167,7 +167,7 @@ class CognitoAuthTestCase(DjangoTestCase):
 
 
 class VerifyTokenTestCase(TestCase):
-    @mock.patch('cognito_code_grant.middleware.jwt')
+    @mock.patch('cognito_code_grant.authentication.jwt')
     def test_decodes_token_with_provided_keys(self, jwt_mock):
         jwt_mock.get_unverified_header.return_value = {'kid': '1'}
         jwt_mock.decode.return_value = 'test_token'
@@ -185,9 +185,9 @@ class VerifyTokenTestCase(TestCase):
                                                 audience=settings.AUTH_COGNITO_CLIENT_ID,
                                                 options={'verify_at_hash': False})
 
-    @mock.patch('cognito_code_grant.middleware.cache')
-    @mock.patch('cognito_code_grant.middleware._fetch_cognito_keys')
-    @mock.patch('cognito_code_grant.middleware.jwt')
+    @mock.patch('cognito_code_grant.authentication.cache')
+    @mock.patch('cognito_code_grant.authentication._fetch_cognito_keys')
+    @mock.patch('cognito_code_grant.authentication.jwt')
     def test_fetches_keys_if_not_provided(self, jwt_mock, fetch_keys_mock, cache_mock):
         jwt_mock.get_unverified_header.return_value = {'kid': '1'}
         jwt_mock.decode.return_value = 'test_token'
@@ -197,8 +197,8 @@ class VerifyTokenTestCase(TestCase):
         _verify_token_and_decode('test_token')
         fetch_keys_mock.assert_called_once()
 
-    @mock.patch('cognito_code_grant.middleware.cache')
-    @mock.patch('cognito_code_grant.middleware.jwt')
+    @mock.patch('cognito_code_grant.authentication.cache')
+    @mock.patch('cognito_code_grant.authentication.jwt')
     def test_uses_from_cache_keys_if_not_provided(self, jwt_mock, cache_mock):
         jwt_mock.get_unverified_header.return_value = {'kid': '1'}
         jwt_mock.decode.return_value = 'test_token'
@@ -209,8 +209,8 @@ class VerifyTokenTestCase(TestCase):
 
 
 class FetchKeysTestCase(TestCase):
-    @mock.patch('cognito_code_grant.middleware.cache')
-    @mock.patch('cognito_code_grant.middleware.requests')
+    @mock.patch('cognito_code_grant.authentication.cache')
+    @mock.patch('cognito_code_grant.authentication.requests')
     def test_gets_tokens_from_configured_url_and_sets_cache(self, requests_mock, cache_mock):
         mock_reply = mock.MagicMock()
         mock_reply.json.return_value = {'some':'json'}
@@ -223,7 +223,7 @@ class FetchKeysTestCase(TestCase):
 
 
 class RefreshTokensTestCase(TestCase):
-    @mock.patch('cognito_code_grant.middleware.requests')
+    @mock.patch('cognito_code_grant.authentication.requests')
     def test_gets_new_tokens_from_cognito(self, requests_mock):
         mock_reply = mock.MagicMock()
         mock_reply.json.return_value = {'some':'json'}
