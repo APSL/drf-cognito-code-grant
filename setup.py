@@ -11,12 +11,13 @@ def readall(path):
 
 
 setup(
-    name="drf-cognito_code_grant",
-    version="1.0",
+    name="cognito_code_grant",
+    version="1.0.1",
     description="A middleware and a set of handlers to handle "
     "Code Grant authentication with Cognito",
     long_description=readall("README.md"),
-    author="Aleksey Panov",
+    long_description_content_type="text/markdown",
+    author="STITCH (Aleksey Panov, Mario Brito, Gaston Lucero, Daniel Hengeveld)",
     author_email="panovitch@gmail.com",
     license="MIT",
     packages=find_packages(exclude=("tests.*", "tests")),
@@ -27,8 +28,6 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
         "Framework :: Django",
-        "Framework :: Django :: 2.0",
-        "Framework :: Django :: 2.1",
         "Framework :: Django :: 2.2",
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
@@ -39,5 +38,6 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Topic :: Software Development :: Libraries :: Python Modules",
+        "License :: OSI Approved :: MIT License",
     ],
 )
