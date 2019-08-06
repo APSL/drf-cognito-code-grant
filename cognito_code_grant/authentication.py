@@ -80,16 +80,8 @@ class CognitoAuthentication(authentication.BaseAuthentication):
     def set_user(self, decoded_id_token: dict):
         email = decoded_id_token['email']
         user_id = decoded_id_token['cognito:username']
-
-        # transaction mostly required for distributed deployments
-        with transaction.atomic():
-            try:
-                user = User.objects.select_for_update().get(username=user_id)
-            except User.DoesNotExist:
-                user = User.objects.create(username=user_id, email=email)
-                user = User.objects.select_for_update().get(username=user_id)
-
-            self.set_groups(user, decoded_id_token)
+        user, _ = User.objects.get_or_create(username=user_id, email=email)
+        self.set_groups(user, decoded_id_token)
 
         return user
 
