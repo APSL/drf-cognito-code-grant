@@ -12,7 +12,7 @@ jobs:
           command: |
             export DJANGO_SETTINGS_MODULE=tests.settings
             python -m django migrate
-      - run: python -m django test
+            python -m django test
   build_and_deploy:
     docker:
       - image: circleci/python:3.7.0
