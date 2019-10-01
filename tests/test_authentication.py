@@ -4,9 +4,7 @@ from collections import defaultdict
 
 import django
 from django.conf import settings
-from tests.settings import test_settings
 
-settings.configure(**test_settings)
 django.setup()
 
 from django.test import TestCase as DjangoTestCase

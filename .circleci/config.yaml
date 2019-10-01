@@ -1,0 +1,39 @@
+version: 2.1
+jobs:
+  test:
+    docker:
+      - image: circleci/python:3.7.0
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
+      - run: python setup.py install
+      - run:
+          command: |
+            export DJANGO_SETTINGS_MODULE=tests.settings
+            python -m django migrate
+      - run: python -m django test
+  build_and_deploy:
+    docker:
+      - image: circleci/python:3.7.0
+    steps:
+      - checkout
+      - run: sudo chown -R circleci:circleci /usr/local/bin
+      - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
+      - run: python setup.py install
+      - run: python setup.py sdist
+      - run: pip install twine
+workflows:
+  version: 2
+  test_build_deploy:
+    jobs:
+      - test
+      - build_and_deploy:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - staging
+                - production
+                - master
