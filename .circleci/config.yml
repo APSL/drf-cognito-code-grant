@@ -34,6 +34,5 @@ workflows:
           filters:
             branches:
               only:
-                - staging
                 - production
                 - master
