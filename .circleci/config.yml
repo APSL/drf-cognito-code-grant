@@ -20,9 +20,19 @@ jobs:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: python setup.py install
-      - run: python setup.py sdist
-      - run: pip install twine
+      - run:
+          command: |
+            pip install twine bumpversion
+            python setup.py install
+      - run: bumpversion patch setup.py
+      - run:
+          command: |
+            python setup.py sdist
+            twine upload dist/*
+      - run:
+          command: |
+            git push
+            git push --tags
 workflows:
   version: 2
   test_build_deploy:
