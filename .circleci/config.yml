@@ -35,8 +35,8 @@ jobs:
             twine upload dist/*
       - run:
           command: |
-            git push
-            git push --tags
+            git push origin master
+            git push origin master --tags
 workflows:
   version: 2
   test_build_deploy:
@@ -48,5 +48,4 @@ workflows:
           filters:
             branches:
               only:
-                - production
                 - master
