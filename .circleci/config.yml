@@ -24,6 +24,10 @@ jobs:
           command: |
             pip install twine bumpversion
             python setup.py install
+      - run:
+          command: |
+              git config  user.email "dev@stitchdesignlab.com"
+              git config  user.name "Dev Bot"
       - run: bumpversion patch setup.py
       - run:
           command: |
