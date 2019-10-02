@@ -54,3 +54,13 @@ AUTH_COGNITO_CLIENT_ID = # your client ID
 AUTH_COGNITO_CODE_GRANT_URL = # your token endpoint (https://AUTH_DOMAIN/oauth2/token)
 AUTH_COGNITO_JWKS_URL = # the url for your JWKs (https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json.)
 ```
+
+### Development
+To run tests, you need to point Django to local test settings, and run the migrations (it will use an sqllite db in a temp folder).  
+```python
+export DJANGO_SETTINGS_MODULE=tests.settings
+python -m django migrate
+python -m django test
+```
+
+On a merge to master, CICD will automatically create a `patch` version bump, and deploy to pypi. Minor/Major realeases need to be handled manually by the maintainers.

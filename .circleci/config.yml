@@ -12,7 +12,7 @@ jobs:
           command: |
             export DJANGO_SETTINGS_MODULE=tests.settings
             python -m django migrate
-      - run: python -m django test
+            python -m django test
   build_and_deploy:
     docker:
       - image: circleci/python:3.7.0
@@ -20,9 +20,23 @@ jobs:
       - checkout
       - run: sudo chown -R circleci:circleci /usr/local/bin
       - run: sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: python setup.py install
-      - run: python setup.py sdist
-      - run: pip install twine
+      - run:
+          command: |
+            pip install twine bumpversion
+            python setup.py install
+      - run:
+          command: |
+              git config  user.email "dev@stitchdesignlab.com"
+              git config  user.name "Dev Bot"
+      - run: bumpversion patch setup.py
+      - run:
+          command: |
+            python setup.py sdist
+            twine upload dist/*
+      - run:
+          command: |
+            git push origin master
+            git push origin master --tags
 workflows:
   version: 2
   test_build_deploy:
@@ -34,5 +48,4 @@ workflows:
           filters:
             branches:
               only:
-                - production
                 - master
