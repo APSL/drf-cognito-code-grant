@@ -50,7 +50,7 @@ def _refresh_tokens(refresh_token: str):
 
 class CognitoAuthentication(authentication.BaseAuthentication):
     def get_token(self, request, token):
-        return request.session.get(request, token)
+        return request.session.get(token)
 
     def set_token(self, request, token, value):
         request.session[token] = value
