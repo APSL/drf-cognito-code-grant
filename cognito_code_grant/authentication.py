@@ -49,10 +49,16 @@ def _refresh_tokens(refresh_token: str):
 
 
 class CognitoAuthentication(authentication.BaseAuthentication):
+    def get_token(self, request, token):
+        return request.session.get(token)
+
+    def set_token(self, request, token, value):
+        request.session[token] = value
+
     def authenticate(self, request):
-        access_token = request.session.get('access_token')
-        id_token = request.session.get('id_token')
-        refresh_token = request.session.get('refresh_token')
+        access_token = self.get_token(request, 'access_token')
+        id_token = self.get_token(request, 'id_token')
+        refresh_token = self.get_token(request, 'refresh_token')
 
         if not access_token:
             # auth not attempted
@@ -72,8 +78,8 @@ class CognitoAuthentication(authentication.BaseAuthentication):
         decoded_id_token = _verify_token_and_decode(id_token)
         user = self.set_user(decoded_id_token)
 
-        request.session['id_token'] = id_token
-        request.session['access_token'] = access_token
+        self.set_token(request, 'id_token', id_token)
+        self.set_token(request, 'access_token', access_token)
 
         return (user, None)
 
