@@ -75,6 +75,24 @@ class CognitoAuthTestCase(DjangoTestCase):
             ])
         self.assertEqual(set_user.username, existing_user.username)
 
+    @mock.patch('cognito_code_grant.authentication._refresh_tokens')
+    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
+    def test_invalid_access_token_401(self, mock_verify_token, mock_refresh_token):
+        auth = CognitoAuthentication()
+        request = mock.MagicMock()
+        request.session = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+            'id_token': 'test_id_token',
+        }
+        mock_verify_token.side_effect = [JWTError]
+        mock_refresh_token.return_value = {
+            'reason': 'bad refresh token'
+        }
+
+        with self.assertRaises(exceptions.AuthenticationFailed):
+            set_user, auth = auth.authenticate(request)
+
     @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
     def test_valid_access_token_and_id_token_dont_update_existing_groups(self, mock_verify_token):
         auth = CognitoAuthentication()
@@ -105,20 +123,6 @@ class CognitoAuthTestCase(DjangoTestCase):
             mock.call('test_id_token')
             ])
         self.assertEqual(set_user.username, existing_user.username)
-
-    @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
-    def test_invalid_access_token_401(self, mock_verify_token):
-        auth = CognitoAuthentication()
-        request = mock.MagicMock()
-        request.session = {
-            'access_token': 'test_access_token',
-            'refresh_token': 'test_refresh_token',
-            'id_token': 'test_id_token',
-        }
-        mock_verify_token.side_effect = [JWTError]
-
-        with self.assertRaises(exceptions.AuthenticationFailed):
-            set_user, auth = auth.authenticate(request)
 
 
     @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')

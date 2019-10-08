@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.db import transaction
 from django.contrib.auth.models import User, Group
 
 from rest_framework import authentication
@@ -66,14 +65,12 @@ class CognitoAuthentication(authentication.BaseAuthentication):
 
         try:
             _verify_token_and_decode(access_token)
-        except jwt.ExpiredSignatureError:
+        except jwt.JWTError:
             new_tokens = _refresh_tokens(refresh_token)
             id_token = new_tokens.get('id_token')
             access_token = new_tokens.get('access_token')
-            if not id_token:
+            if not id_token or not access_token:
                 raise exceptions.AuthenticationFailed('Failed to fetch new tokens - invalid refresh token')
-        except jwt.JWTError:
-            raise exceptions.AuthenticationFailed('Invalid access token')
 
         decoded_id_token = _verify_token_and_decode(id_token)
         user = self.set_user(decoded_id_token)
