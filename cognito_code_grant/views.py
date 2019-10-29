@@ -33,6 +33,8 @@ def login(request):
     response = HttpResponseRedirect(app_redirect_url)
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
+        if settings.SHARED_TOKENS:
+            response.set_cookie(token_type, tokens[token_type], domain=settings.SHARED_TOKENS_DOMAIN, expires=3600)
     return response
 
 

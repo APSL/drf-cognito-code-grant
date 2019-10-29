@@ -37,6 +37,9 @@ CACHES = {
 
 DJANGO_DEBUG = True,
 
+SHARED_TOKENS = False
+SHARED_TOKENS_DOMAIN = None
+
 
 AUTH_COGNITO_JWKS_URL = 'https://jwks.url/jwks.json',
 AUTH_COGNITO_CODE_GRANT_URL = 'https://your_cognito_url.com/oauth2/token',
