@@ -51,7 +51,7 @@ class CognitoAuthentication(authentication.BaseAuthentication):
     def get_token(self, request, token):
         session_token = request.session.get(token)
         shared_token = None
-        if settings.SHARED_TOKENS:
+        if getattr(settings, 'SHARED_TOKENS', None):
             shared_token = request.COOKIES.get(token)
         return session_token or shared_token or None
 
