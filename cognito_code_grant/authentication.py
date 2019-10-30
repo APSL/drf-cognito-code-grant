@@ -49,7 +49,11 @@ def _refresh_tokens(refresh_token: str):
 
 class CognitoAuthentication(authentication.BaseAuthentication):
     def get_token(self, request, token):
-        return request.session.get(token)
+        session_token = request.session.get(token)
+        shared_token = None
+        if getattr(settings, 'SHARED_TOKENS', None):
+            shared_token = request.COOKIES.get(token)
+        return session_token or shared_token or None
 
     def set_token(self, request, token, value):
         request.session[token] = value
