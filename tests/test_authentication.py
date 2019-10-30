@@ -9,6 +9,7 @@ django.setup()
 
 from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User, Group
+from http.cookies import SimpleCookie
 
 from unittest import TestCase
 
@@ -25,6 +26,57 @@ TEST_GROUPS = [
     'group_1',
     'group_2',
 ]
+
+
+class GetTokensTestCase(DjangoTestCase):
+    def test_no_shared_tokens(self):
+        auth = CognitoAuthentication()
+        request = mock.MagicMock()
+        request.session = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+            'id_token': 'test_id_token',
+        }
+
+        token = auth.get_token(request, 'access_token')
+        self.assertEqual(token, 'test_access_token')
+
+    def test_shared_tokens_session_token_present(self):
+        auth = CognitoAuthentication()
+        request = mock.MagicMock()
+        settings.SHARED_TOKENS = True
+        settings.SHARED_TOKENS_DOMAIN = '.test.com'
+        request.session = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+            'id_token': 'test_id_token',
+        }
+        request.COOKIES = SimpleCookie({
+            'access_token': 'test_access_token_shared',
+            'refresh_token': 'test_refresh_token_shared',
+            'id_token': 'test_id_token_shared',
+        })
+
+
+        token = auth.get_token(request, 'access_token')
+
+        self.assertEqual(token, 'test_access_token')
+
+    def test_shared_tokens_no_session_token_present(self):
+        auth = CognitoAuthentication()
+        request = mock.MagicMock()
+        request.session = {}
+        request.COOKIES = {
+            'access_token': 'test_access_token_shared',
+            'refresh_token': 'test_refresh_token_shared',
+            'id_token': 'test_id_token_shared',
+        }
+        settings.SHARED_TOKENS = True
+        settings.SHARED_TOKENS_DOMAIN = '.test.com'
+
+        token = auth.get_token(request, 'access_token')
+
+        self.assertEqual(token, 'test_access_token_shared')
 
 class CognitoAuthTestCase(DjangoTestCase):
     @mock.patch('cognito_code_grant.authentication._verify_token_and_decode')
