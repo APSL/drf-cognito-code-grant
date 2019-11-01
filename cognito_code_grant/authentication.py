@@ -65,7 +65,7 @@ class CognitoAuthentication(authentication.BaseAuthentication):
 
         if not access_token:
             # auth not attempted
-            return None, None
+            return None
 
         try:
             _verify_token_and_decode(access_token)

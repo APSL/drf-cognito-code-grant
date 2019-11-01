@@ -2,7 +2,7 @@ import copy
 from unittest import mock
 from collections import defaultdict
 
-import django
+    import django
 from django.conf import settings
 
 django.setup()
