@@ -2,6 +2,7 @@ from rest_framework.test import APITestCase
 from unittest import mock
 from django.conf import settings
 from requests.exceptions import HTTPError
+from requests import Response
 
 
 class TestLogin(APITestCase):
@@ -55,8 +56,11 @@ class TestLogin(APITestCase):
 
     @mock.patch("cognito_code_grant.views.requests.post")
     def test_401_on_bad_request_from_cognito(self, requests_mock):
+        mock_cognito_response = Response()
+        mock_cognito_response.status_code = 401
+        mock_cognito_response._content = 'Fake unauthorized response'
         mock_cognito_reply = mock.MagicMock()
-        mock_cognito_reply.raise_for_status.side_effect = HTTPError('boom')
+        mock_cognito_reply.raise_for_status.side_effect = HTTPError('boom', response=mock_cognito_response)
         requests_mock.return_value = mock_cognito_reply
 
         response = self.client.get('/auth/login/?code=testCode&state=https://example.com')
