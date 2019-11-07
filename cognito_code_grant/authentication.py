@@ -85,9 +85,9 @@ class CognitoAuthentication(authentication.BaseAuthentication):
         return (user, None)
 
     def set_user(self, decoded_id_token: dict):
-        email = decoded_id_token['email']
+        email = decoded_id_token['email'].lower()
         user_id = decoded_id_token['cognito:username']
-        user, _ = User.objects.get_or_create(username=user_id, email=email)
+        user, _ = User.objects.get_or_create(username=user_id, email_iexact=email, defaults={'username': user_id, 'email': email})
         self.set_groups(user, decoded_id_token)
 
         return user
