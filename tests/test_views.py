@@ -2,7 +2,7 @@ from rest_framework.test import APITestCase
 from unittest import mock
 from django.conf import settings
 from requests.exceptions import HTTPError
-
+from datetime import datetime
 
 class TestLogin(APITestCase):
     @mock.patch("cognito_code_grant.views.requests.post")
@@ -63,6 +63,21 @@ class TestLogin(APITestCase):
 
         self.assertEqual(response.status_code, 401)
 
+    @mock.patch("cognito_code_grant.views.requests.post")
+    def test_sets_shared_cookies_correctly(self, requests_mock):
+        mock_cognito_reply = mock.MagicMock()
+        mock_cognito_reply.json.return_value = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+            'id_token': 'test_id_token',
+        }
+        requests_mock.return_value = mock_cognito_reply
+        settings.__setattr__('SHARED_TOKENS',  True)
+        response = self.client.get('/auth/login/?code=testCode&state=https://example.com')
+        self.assertEqual(response.client.cookies['access_token'].value, 'test_access_token')
+        self.assertEqual(response.client.cookies['access_token']['expires'], 3600)
+        self.assertEqual(response.client.cookies['refresh_token'].value, 'test_refresh_token')
+        self.assertEqual(response.client.cookies['refresh_token']['expires'], 3600*30)
 
 class TestLogout(APITestCase):
     @mock.patch("cognito_code_grant.views.requests.post")
