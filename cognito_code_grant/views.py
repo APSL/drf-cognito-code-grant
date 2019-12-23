@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import path, include
@@ -7,6 +9,8 @@ from rest_framework.decorators import authentication_classes
 import requests
 
 TOKEN_TYPES = ['id_token', 'access_token', 'refresh_token']
+
+logger = logging.getLogger(__package__)
 
 
 @api_view(['GET'])
@@ -27,7 +31,9 @@ def login(request):
 
     try:
         cognito_reply.raise_for_status()
-    except requests.exceptions.HTTPError:
+    except requests.exceptions.HTTPError as e:
+        logger.warning("Auth request failed with status %s: %s",
+                       e.response.status_code, e.response.content)
         return HttpResponse('Unauthorized', status=401)
     tokens: dict = cognito_reply.json()
     response = HttpResponseRedirect(app_redirect_url)
@@ -49,6 +55,9 @@ def logout(request):
     app_redirect_url: str = request.query_params.get('state', '')
     response = HttpResponseRedirect(app_redirect_url)
     request.session.flush()
+    if getattr(settings, 'SHARED_TOKENS', None):
+        for token_type in TOKEN_TYPES:
+            response.delete_cookie(token_type, domain=settings.SHARED_TOKENS_DOMAIN)
     return response
 
 
@@ -57,3 +66,4 @@ def include_auth_urls():
         path(r'login/', login),
         path(r'logout/', logout)
     ])
+

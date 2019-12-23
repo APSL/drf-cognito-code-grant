@@ -75,7 +75,9 @@ class CognitoAuthentication(authentication.BaseAuthentication):
             access_token = new_tokens.get('access_token')
             if not id_token or not access_token:
                 raise exceptions.AuthenticationFailed('Failed to fetch new tokens - invalid refresh token')
-
+        except ValueError:
+            # couldnt find correct keys to decode the token, probably bad tokens
+            raise exceptions.AuthenticationFailed('Failed to fetch new tokens - couldnt fetch keys')
         decoded_id_token = _verify_token_and_decode(id_token)
         user = self.set_user(decoded_id_token)
 
@@ -85,9 +87,9 @@ class CognitoAuthentication(authentication.BaseAuthentication):
         return (user, None)
 
     def set_user(self, decoded_id_token: dict):
-        email = decoded_id_token['email']
+        email = decoded_id_token['email'].lower()
         user_id = decoded_id_token['cognito:username']
-        user, _ = User.objects.get_or_create(username=user_id, email=email)
+        user, _ = User.objects.get_or_create(username=user_id, email__iexact=email, defaults={'username': user_id, 'email': email})
         self.set_groups(user, decoded_id_token)
 
         return user
