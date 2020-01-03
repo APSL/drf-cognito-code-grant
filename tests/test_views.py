@@ -4,6 +4,7 @@ from django.conf import settings
 from requests.exceptions import HTTPError
 from http.cookies import SimpleCookie
 from requests import Response
+from datetime import datetime
 
 class TestLogin(APITestCase):
     @mock.patch("cognito_code_grant.views.requests.post")
@@ -42,7 +43,7 @@ class TestLogin(APITestCase):
 
 
     @mock.patch("cognito_code_grant.views.requests.post")
-    def test_queries_sets_received_cookies_to_response_with_shared_cookies(self, requests_mock):
+    def test_sets_received_cookies_to_response_with_shared_cookies(self, requests_mock):
         mock_cognito_reply = mock.MagicMock()
         mock_cognito_reply.json.return_value = {
             'access_token': 'test_access_token',
@@ -60,7 +61,9 @@ class TestLogin(APITestCase):
         self.assertEqual(self.client.session['refresh_token'], 'test_refresh_token')
         self.assertEqual(self.client.session['id_token'], 'test_id_token')
         self.assertEqual(response.client.cookies['access_token'].value, 'test_access_token')
+        self.assertEqual(response.client.cookies['access_token']['expires'], 3600)
         self.assertEqual(response.client.cookies['refresh_token'].value, 'test_refresh_token')
+        self.assertEqual(response.client.cookies['refresh_token']['expires'], 3600*30)
         self.assertEqual(response.client.cookies['id_token'].value, 'test_id_token')
 
     @mock.patch("cognito_code_grant.views.requests.post")
@@ -89,7 +92,6 @@ class TestLogin(APITestCase):
         response = self.client.get('/auth/login/?code=testCode&state=https://example.com')
 
         self.assertEqual(response.status_code, 401)
-
 
 class TestLogout(APITestCase):
     @mock.patch("cognito_code_grant.views.requests.post")

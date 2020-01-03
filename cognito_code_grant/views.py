@@ -40,7 +40,12 @@ def login(request):
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
         if getattr(settings, 'SHARED_TOKENS', None):
-            response.set_cookie(token_type, tokens[token_type], domain=settings.SHARED_TOKENS_DOMAIN, expires=3600)
+            if token_type == 'refresh_token':
+                expiry_time = 60 * 60 * 30
+            else:
+                expiry_time = 60 * 60
+            response.set_cookie(
+                token_type, tokens[token_type], domain=settings.SHARED_TOKENS_DOMAIN, expires=expiry_time)
     return response
 
 
