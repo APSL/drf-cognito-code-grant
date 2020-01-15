@@ -12,9 +12,6 @@ from botocore.signers import CloudFrontSigner
 
 # Heavily inspired on a couple of existing solutions in stackoverflow and AWS documentation.
 # Adapted for good measure, to serve our needs.
-#SIGNED_COOKIES_CF_KEY_PAIR_ID="APKAJ7ISVY5AQEUUMLRQ"
-#SIGNED_COOKIES_CF_DISTRIBUTION_ID = "EL6H10JZ5022P"
-#SIGNED_COOKIES_PRIVATE_KEY = ...
 
 def rsa_signer(message):
     return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
