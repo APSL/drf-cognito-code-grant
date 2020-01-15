@@ -114,7 +114,7 @@ def add_signed_cookies(response):
     # The idea is to generate the cookies at each request and have them relatively short lived.
     try:
         if getattr(settings, 'SIGNED_COOKIES', False):
-            cookies = generate_signed_cookies()
+            cookies = generate_signed_cookies(settings.SIGNED_COOKIES_RESOURCE)
             for key, value in cookies.items():
                 response.set_cookie(key, value, domain=settings.SIGNED_COOKIES_DOMAIN)
     except Exception as ex:
