@@ -16,16 +16,6 @@ from botocore.signers import CloudFrontSigner
 #SIGNED_COOKIES_CF_DISTRIBUTION_ID = "EL6H10JZ5022P"
 #SIGNED_COOKIES_PRIVATE_KEY = ...
 
-conn = boto3.client('cloudfront')
-if getattr(settings, 'SIGNED_COOKIES', False):
-    dist_id = settings.SIGNED_COOKIES_CF_DISTRIBUTION_ID
-    dist = SignedCookiedCloudfrontDistribution(conn,dist_id)
-    private_key = serialization.load_pem_private_key(
-        settings.SIGNED_COOKIES_PRIVATE_KEY,
-        password=None,
-        backend=default_backend()
-    )
-
 def rsa_signer(message):
     return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
 
@@ -100,7 +90,7 @@ class SignedCookiedCloudfrontDistribution():
         cookies = {
             "CloudFront-Policy": encoded_policy,
             "CloudFront-Signature": encoded_signature,
-            "CloudFront-Key-Pair-Id": key_pair_id
+            "CloudFront-Key-Pair-Id": settings.SIGNED_COOKIES_CF_KEY_PAIR_ID,
         }
         return cookies
 
@@ -109,6 +99,17 @@ class SignedCookiedCloudfrontDistribution():
         unixTime = time.time() + (minutes * 60)
         expires = int(unixTime)  #if not converted to int causes Malformed Policy error and has 2 decimals in value
         return expires
+
+
+conn = boto3.client('cloudfront')
+if getattr(settings, 'SIGNED_COOKIES', False):
+    dist_id = settings.SIGNED_COOKIES_CF_DISTRIBUTION_ID
+    dist = SignedCookiedCloudfrontDistribution(conn,dist_id)
+    private_key = serialization.load_pem_private_key(
+        settings.SIGNED_COOKIES_PRIVATE_KEY.encode('utf-8'),
+        password=None,
+        backend=default_backend()
+    )
 
 
 def add_signed_cookies(response):
