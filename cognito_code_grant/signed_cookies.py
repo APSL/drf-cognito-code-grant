@@ -2,7 +2,6 @@ from django.conf import settings
 
 from datetime import datetime
 import time
-import boto3
 import logging
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -31,24 +30,8 @@ def generate_signed_cookies(resource=None,expire_minutes=5):
 
 class SignedCookiedCloudfrontDistribution():
 
-    def __init__(self,connection,download_dist_id,cname=True):
-        """
-        @download_dist_id   id of your Cloudfront download distribution
-        @cname          boolean True to use first domain cname, False to use 
-                        cloudfront domain name, defaults to cname
-                        which presumably matches your writeable cookies ( .mydomain.com)
-        """
-        self.download_dist = None
-        self.domain = None
-        try:
-            download_dist = connection.get_distribution(Id=download_dist_id)
-            if cname and download_dist.get('Distribution', {}).get('AliasICPRecordals', {}):
-                self.domain = download_dist['Distribution']['AliasICPRecordals'][0]['CNAME'] #use first cname if defined
-            else:
-                self.domain = download_dist.domain_name
-            self.download_dist = download_dist
-        except Exception as ex:
-            logging.error(ex)
+    def __init__(self,cname):
+        self.domain = cname
 
     def get_http_resource_url(self,resource=None,secure=False):
         """
@@ -76,7 +59,7 @@ class SignedCookiedCloudfrontDistribution():
         """
         http_resource = self.get_http_resource_url(resource,secure=True)    #per-file access #NOTE secure should match security settings of cloudfront distribution
 
-        cloudfront_signer = CloudFrontSigner(settings.SIGNED_COOKIES_CF_KEY_PAIR_ID, rsa_signer)
+        cloudfront_signer = CloudFrontSigner(settings.CLOUDFRONT_SIGNED_COOKIES_KEY_PAIR_ID, rsa_signer)
         expires = SignedCookiedCloudfrontDistribution.get_expires(expire_minutes)
         policy = cloudfront_signer.build_policy(http_resource,datetime.fromtimestamp(expires))
         encoded_policy = cloudfront_signer._url_b64encode(policy.encode('utf-8')).decode('utf-8')
@@ -87,7 +70,7 @@ class SignedCookiedCloudfrontDistribution():
         cookies = {
             "CloudFront-Policy": encoded_policy,
             "CloudFront-Signature": encoded_signature,
-            "CloudFront-Key-Pair-Id": settings.SIGNED_COOKIES_CF_KEY_PAIR_ID,
+            "CloudFront-Key-Pair-Id": settings.CLOUDFRONT_SIGNED_COOKIES_KEY_PAIR_ID,
         }
         return cookies
 
@@ -98,12 +81,10 @@ class SignedCookiedCloudfrontDistribution():
         return expires
 
 
-conn = boto3.client('cloudfront')
-if getattr(settings, 'SIGNED_COOKIES', False):
-    dist_id = settings.SIGNED_COOKIES_CF_DISTRIBUTION_ID
-    dist = SignedCookiedCloudfrontDistribution(conn,dist_id)
+if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
+    dist = SignedCookiedCloudfrontDistribution(settings.CLOUDFRONT_SIGNED_COOKIES_CNAME)
     private_key = serialization.load_pem_private_key(
-        settings.SIGNED_COOKIES_PRIVATE_KEY.encode('utf-8'),
+        settings.CLOUDFRONT_SIGNED_COOKIES_PRIVATE_KEY.encode('utf-8'),
         password=None,
         backend=default_backend()
     )
@@ -113,10 +94,10 @@ def add_signed_cookies(response):
     # Generate signed cookies and add them to the response.
     # The idea is to generate the cookies at each request and have them relatively short lived.
     try:
-        if getattr(settings, 'SIGNED_COOKIES', False):
-            cookies = generate_signed_cookies(settings.SIGNED_COOKIES_RESOURCE)
+        if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
+            cookies = generate_signed_cookies(settings.CLOUDFRONT_SIGNED_COOKIES_RESOURCE)
             for key, value in cookies.items():
-                response.set_cookie(key, value, domain=settings.SIGNED_COOKIES_DOMAIN)
+                response.set_cookie(key, value, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN)
     except Exception as ex:
         logging.error(ex)
 
