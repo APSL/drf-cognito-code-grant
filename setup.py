@@ -12,7 +12,7 @@ def readall(path):
 
 setup(
     name="cognito_code_grant",
-    version="1.0.12",
+    version="1.0.13",
     description="A middleware and a set of handlers to handle "
     "Code Grant authentication with Cognito",
     long_description=readall("README.md"),
@@ -22,7 +22,7 @@ setup(
     license="MIT",
     packages=find_packages(exclude=("tests.*", "tests")),
     python_requires=">=3.5",
-    install_requires=["Django>=1.11", "djangorestframework>=3.0", "requests", "python-jose"],
+    install_requires=["Django>=1.11", "djangorestframework>=3.0", "requests", "python-jose", "cryptography"],
     include_package_data=True,
     classifiers=[
         "Development Status :: 5 - Production/Stable",
