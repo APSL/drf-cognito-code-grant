@@ -108,6 +108,7 @@ class SignedCookiesMiddleware(object):
 
     def __call__(self, request):
         response = self.get_response(request)
-        add_signed_cookies(response)
+        if getattr(request, 'user') and request.user.is_authenticated():
+            add_signed_cookies(response)
         return response
 
