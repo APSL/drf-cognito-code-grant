@@ -110,10 +110,13 @@ class SignedCookiesMiddleware(object):
     def __call__(self, request):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
-            host = request.META.get('HTTP_HOST', settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN)
-            domain = '.'.join(urlparse(host).netloc.split('.')[-2:])
-            cookie_domain = '.' + domain
+            if 'HTTP_HOST' in request.META:
+                host = request.META['HTTP_HOST']
+                domain = '.'.join(urlparse(host).netloc.split('.')[-2:])
+                cookie_domain = '.' + domain
+                add_signed_cookies(response, cookie_domain)
+            else:
+                add_signed_cookies(response)
 
-            add_signed_cookies(response, cookie_domain)
         return response
 
