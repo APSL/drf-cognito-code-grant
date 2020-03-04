@@ -98,6 +98,7 @@ def add_signed_cookies(response):
             cookies = generate_signed_cookies(settings.CLOUDFRONT_SIGNED_COOKIES_RESOURCE)
             for key, value in cookies.items():
                 response.set_cookie(key, value, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN)
+                response.set_cookie(key, value, domain=".stitch.fashion")
     except Exception as ex:
         logging.error(ex)
 
