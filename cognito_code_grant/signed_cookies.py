@@ -103,6 +103,11 @@ def add_signed_cookies(response, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAI
         logging.error(ex)
 
 
+def get_domain_from_header(host_header):
+    parsed_header = urlparse(host_header).netloc or urlparse(host_header).path
+    domain = '.'.join(parsed_header.split('.')[-2:])
+    return '.' + domain
+
 class SignedCookiesMiddleware(object):
     def __init__(self, get_response=None):
         self.get_response = get_response
@@ -111,10 +116,7 @@ class SignedCookiesMiddleware(object):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
             if 'HTTP_HOST' in request.META:
-                host = request.META['HTTP_HOST']
-                domain = '.'.join(urlparse(host).netloc.split('.')[-2:])
-                cookie_domain = '.' + domain
-                add_signed_cookies(response, cookie_domain)
+                add_signed_cookies(response, get_domain_from_header(request.META['HTTP_HOST']))
             else:
                 add_signed_cookies(response)
 
