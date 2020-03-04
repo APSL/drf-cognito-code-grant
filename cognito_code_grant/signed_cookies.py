@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 from botocore.signers import CloudFrontSigner
+from urllib.parse import urlparse
 
 # Heavily inspired on a couple of existing solutions in stackoverflow and AWS documentation.
 # Adapted for good measure, to serve our needs.
@@ -90,14 +91,14 @@ if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
     )
 
 
-def add_signed_cookies(response):
+def add_signed_cookies(response, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN):
     # Generate signed cookies and add them to the response.
     # The idea is to generate the cookies at each request and have them relatively short lived.
     try:
         if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
             cookies = generate_signed_cookies(settings.CLOUDFRONT_SIGNED_COOKIES_RESOURCE)
             for key, value in cookies.items():
-                response.set_cookie(key, value, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN)
+                response.set_cookie(key, value, domain=domain)
     except Exception as ex:
         logging.error(ex)
 
@@ -109,6 +110,10 @@ class SignedCookiesMiddleware(object):
     def __call__(self, request):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
-            add_signed_cookies(response)
+            host = request.META['HTTP_HOST']
+            domain = '.'.join(urlparse(host).netloc.split('.')[-2:])
+            cookie_domain = '.' + domain
+
+            add_signed_cookies(response, cookie_domain)
         return response
 
