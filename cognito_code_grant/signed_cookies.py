@@ -116,7 +116,14 @@ class SignedCookiesMiddleware(object):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
             if 'HTTP_HOST' in request.META:
-                add_signed_cookies(response, get_domain_from_header(request.META['HTTP_HOST']))
+                # UGLY HACK
+                host = request.META['HTTP_HOST']
+                if 'stitch.fashion' in host:
+                    dist = SignedCookiedCloudfrontDistribution('assets-v2.stitch.fashion')
+                else:
+                    dist = SignedCookiedCloudfrontDistribution('assets-v2.stitchdesignlab.com')
+
+                add_signed_cookies(response, get_domain_from_header(host))
             else:
                 add_signed_cookies(response)
 
