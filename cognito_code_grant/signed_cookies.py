@@ -17,7 +17,7 @@ def rsa_signer(message):
     return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
 
 
-def generate_signed_cookies(resource=None,expire_minutes=5, assets_domain=None):
+def generate_signed_cookies(resource=None,expire_minutes=30, assets_domain=None):
     """
     @resource   path to s3 object inside bucket(or a wildcard path,e.g. '/blah/*' or  '*')
     @expire_minutes     how many minutes before we expire these access credentials (within cookie)
