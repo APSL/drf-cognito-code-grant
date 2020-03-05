@@ -17,7 +17,7 @@ def rsa_signer(message):
     return private_key.sign(message, padding.PKCS1v15(), hashes.SHA1())
 
 
-def generate_signed_cookies(resource=None,expire_minutes=5):
+def generate_signed_cookies(resource=None,expire_minutes=5, assets_domain=None):
     """
     @resource   path to s3 object inside bucket(or a wildcard path,e.g. '/blah/*' or  '*')
     @expire_minutes     how many minutes before we expire these access credentials (within cookie)
@@ -26,6 +26,7 @@ def generate_signed_cookies(resource=None,expire_minutes=5):
     if not resource:
         resource = '*'
 
+    dist = SignedCookiedCloudfrontDistribution(assets_domain)
     return dist.create_signed_cookies(resource,expire_minutes=expire_minutes)
 
 
@@ -83,7 +84,7 @@ class SignedCookiedCloudfrontDistribution():
 
 
 if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
-    dist = SignedCookiedCloudfrontDistribution(settings.CLOUDFRONT_SIGNED_COOKIES_CNAME)
+    #dist = SignedCookiedCloudfrontDistribution(settings.CLOUDFRONT_SIGNED_COOKIES_CNAME)
     private_key = serialization.load_pem_private_key(
         settings.CLOUDFRONT_SIGNED_COOKIES_PRIVATE_KEY.encode('utf-8'),
         password=None,
@@ -91,12 +92,12 @@ if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
     )
 
 
-def add_signed_cookies(response, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN):
+def add_signed_cookies(response, assets_domain, domain=settings.CLOUDFRONT_SIGNED_COOKIES_DOMAIN):
     # Generate signed cookies and add them to the response.
     # The idea is to generate the cookies at each request and have them relatively short lived.
     try:
         if getattr(settings, 'CLOUDFRONT_SIGNED_COOKIES', False):
-            cookies = generate_signed_cookies(settings.CLOUDFRONT_SIGNED_COOKIES_RESOURCE)
+            cookies = generate_signed_cookies(settings.CLOUDFRONT_SIGNED_COOKIES_RESOURCE, assets_domain=assets_domain)
             for key, value in cookies.items():
                 response.set_cookie(key, value, domain=domain)
     except Exception as ex:
@@ -119,13 +120,13 @@ class SignedCookiesMiddleware(object):
                 # UGLY HACK
                 host = request.META['HTTP_HOST']
                 if 'stitch.fashion' in host:
-                    dist = SignedCookiedCloudfrontDistribution('assets-v2.stitch.fashion')
+                    assets_domain = 'assets-v2.stitch.fashion'
                 else:
-                    dist = SignedCookiedCloudfrontDistribution('assets-v2.stitchdesignlab.com')
+                    assets_domain = 'assets-v2.stitchdesignlab.com'
 
-                add_signed_cookies(response, get_domain_from_header(host))
+                add_signed_cookies(response, assets_domain, get_domain_from_header(host))
             else:
-                add_signed_cookies(response)
+                add_signed_cookies(response, 'assets-v2.stitchdesignlab.com')
 
         return response
 
