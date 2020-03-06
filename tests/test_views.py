@@ -6,7 +6,21 @@ from http.cookies import SimpleCookie
 from requests import Response
 from datetime import datetime
 
+from cognito_code_grant.helpers import get_cookie_domain
+
+
 class TestLogin(APITestCase):
+    def test_get_cookie_domain(self):
+        request = mock.MagicMock()
+        request.META = {
+            'HTTP_HOST': 'boards.stitch.fashion',
+        }
+        self.assertEqual(get_cookie_domain(request), '.stitch.fashion')
+        request.META = {
+            'HTTP_HOST': 'boards.stitchdesignlab.com',
+        }
+        self.assertEqual(get_cookie_domain(request), '.stitchdesignlab.com')
+
     @mock.patch("cognito_code_grant.views.requests.post")
     def test_queries_cognito_with_recieved_code(self, requests_mock):
         mock_cognito_reply = mock.MagicMock()
@@ -40,7 +54,24 @@ class TestLogin(APITestCase):
         self.assertEqual(self.client.session['access_token'], 'test_access_token')
         self.assertEqual(self.client.session['refresh_token'], 'test_refresh_token')
         self.assertEqual(self.client.session['id_token'], 'test_id_token')
+        self.assertEqual(response.cookies['id_token']['domain'], '.stitchdesignlab.com')
 
+    @mock.patch("cognito_code_grant.views.requests.post")
+    def test_queries_sets_received_cookies_to_response_fashion_domain(self, requests_mock):
+        mock_cognito_reply = mock.MagicMock()
+        mock_cognito_reply.json.return_value = {
+            'access_token': 'test_access_token',
+            'refresh_token': 'test_refresh_token',
+            'id_token': 'test_id_token',
+        }
+        requests_mock.return_value = mock_cognito_reply
+
+        response = self.client.get('/auth/login/?code=testCode', HTTP_HOST='boards.stitch.fashion')
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.client.session['access_token'], 'test_access_token')
+        self.assertEqual(self.client.session['refresh_token'], 'test_refresh_token')
+        self.assertEqual(self.client.session['id_token'], 'test_id_token')
+        self.assertEqual(response.cookies['id_token']['domain'], '.stitch.fashion')
 
     @mock.patch("cognito_code_grant.views.requests.post")
     def test_sets_received_cookies_to_response_with_shared_cookies(self, requests_mock):

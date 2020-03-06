@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import path, include
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
+from cognito_code_grant.helpers import get_cookie_domain
 
 import requests
 
@@ -37,6 +38,7 @@ def login(request):
         return HttpResponse('Unauthorized', status=401)
     tokens: dict = cognito_reply.json()
     response = HttpResponseRedirect(app_redirect_url)
+    cookie_domain = get_cookie_domain(request)
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
         if getattr(settings, 'SHARED_TOKENS', None):
@@ -45,7 +47,7 @@ def login(request):
             else:
                 expiry_time = 60 * 60
             response.set_cookie(
-                token_type, tokens[token_type], domain=settings.SHARED_TOKENS_DOMAIN, expires=expiry_time)
+                token_type, tokens[token_type], domain=cookie_domain, expires=expiry_time)
     return response
 
 
@@ -56,8 +58,9 @@ def logout(request):
     response = HttpResponseRedirect(app_redirect_url)
     request.session.flush()
     if getattr(settings, 'SHARED_TOKENS', None):
+        cookie_domain = get_cookie_domain(request)
         for token_type in TOKEN_TYPES:
-            response.delete_cookie(token_type, domain=settings.SHARED_TOKENS_DOMAIN)
+            response.delete_cookie(token_type, domain=cookie_domain)
     return response
 
 

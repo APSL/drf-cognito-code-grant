@@ -10,6 +10,9 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from botocore.signers import CloudFrontSigner
 from urllib.parse import urlparse
 
+from cognito_code_grant.helpers import get_assets_v2_domain
+
+
 # Heavily inspired on a couple of existing solutions in stackoverflow and AWS documentation.
 # Adapted for good measure, to serve our needs.
 
@@ -117,14 +120,7 @@ class SignedCookiesMiddleware(object):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
             if 'HTTP_HOST' in request.META:
-                # UGLY HACK
-                host = request.META['HTTP_HOST']
-                if 'stitch.fashion' in host:
-                    assets_domain = 'assets-v2.stitch.fashion'
-                else:
-                    assets_domain = 'assets-v2.stitchdesignlab.com'
-
-                add_signed_cookies(response, assets_domain, get_domain_from_header(host))
+                add_signed_cookies(response, get_assets_v2_domain(request), get_domain_from_header(host))
             else:
                 add_signed_cookies(response, 'assets-v2.stitchdesignlab.com')
 
