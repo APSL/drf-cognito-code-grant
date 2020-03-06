@@ -66,8 +66,7 @@ class TestLogin(APITestCase):
         }
         requests_mock.return_value = mock_cognito_reply
 
-        response = self.client.get('/auth/login/?code=testCode', HTTP_HOST='boards.stitchdesignlab.com')
-        print("response: ", response.content)
+        response = self.client.get('/auth/login/?code=testCode', HTTP_HOST='boards.stitch.fashion')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.session['access_token'], 'test_access_token')
         self.assertEqual(self.client.session['refresh_token'], 'test_refresh_token')
