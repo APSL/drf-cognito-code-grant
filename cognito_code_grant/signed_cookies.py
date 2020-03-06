@@ -120,6 +120,7 @@ class SignedCookiesMiddleware(object):
         response = self.get_response(request)
         if getattr(request, 'user', None) and request.user.is_authenticated:
             if 'HTTP_HOST' in request.META:
+                host = request.META['HTTP_HOST']
                 add_signed_cookies(response, get_assets_v2_domain(request), get_domain_from_header(host))
             else:
                 add_signed_cookies(response, 'assets-v2.stitchdesignlab.com')
