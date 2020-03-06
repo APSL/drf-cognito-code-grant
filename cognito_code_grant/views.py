@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import path, include
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
+from cognito_code_grant.helpers import get_cookie_domain
 
 import requests
 
@@ -61,16 +62,6 @@ def logout(request):
         for token_type in TOKEN_TYPES:
             response.delete_cookie(token_type, domain=cookie_domain)
     return response
-
-
-def get_cookie_domain(request):
-    if 'HTTP_HOST' in request.META:
-        host = request.META['HTTP_HOST']
-        if 'stitch.fashion' in host:
-            cookie_domain = '.stitch.fashion'
-        else:
-            cookie_domain = '.stitchdesignlab.com'
-        return cookie_domain
 
 
 def include_auth_urls():
