@@ -5,6 +5,8 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import path, include
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
+from rest_framework.decorators import permission_classes
+from rest_framework.permissions import AllowAny
 from cognito_code_grant.helpers import get_cookie_domain
 
 import requests
@@ -16,6 +18,7 @@ logger = logging.getLogger(__package__)
 
 @api_view(['GET'])
 @authentication_classes([])
+@permission_classes([AllowAny])
 def login(request):
     auth_redirect_url: str = request.build_absolute_uri().split('?')[0]
     # since the app is running in container, no way to know its on ssl
@@ -53,6 +56,7 @@ def login(request):
 
 @api_view(['GET'])
 @authentication_classes([])
+@permission_classes([AllowAny])
 def logout(request):
     app_redirect_url: str = request.query_params.get('state', '')
     response = HttpResponseRedirect(app_redirect_url)
