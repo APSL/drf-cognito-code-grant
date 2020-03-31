@@ -1,11 +1,13 @@
+from django.db import IntegrityError
 from django.conf import settings
+from django.core.cache import cache
 from django.contrib.auth.models import User, Group
+from psycopg2.errorcodes import UNIQUE_VIOLATION
 
 from rest_framework import authentication
 from rest_framework import exceptions
 from jose import jwt
 
-from django.core.cache import cache
 
 import requests
 
@@ -101,4 +103,10 @@ class CognitoAuthentication(authentication.BaseAuthentication):
 
         for missing_group in missing_groups:
             group, created = Group.objects.get_or_create(name=missing_group)
-            group.user_set.add(user)
+            try:
+                group.user_set.add(user)
+            except IntegrityError as e:
+                # if it's an unique violation, it means a concurrent request
+                # already added this tag to the style, so we can ignore it
+                if e.__cause__.pgcode != UNIQUE_VIOLATION:  # pylint: disable=no-member
+                    raise e
