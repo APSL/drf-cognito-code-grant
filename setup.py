@@ -12,7 +12,7 @@ def readall(path):
 
 setup(
     name="cognito_code_grant",
-    version="1.0.28",
+    version="1.0.29",
     description="A middleware and a set of handlers to handle "
     "Code Grant authentication with Cognito",
     long_description=readall("README.md"),
