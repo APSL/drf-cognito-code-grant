@@ -2,7 +2,12 @@ from django.db import IntegrityError
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import User, Group
-from psycopg2.errorcodes import UNIQUE_VIOLATION
+
+try:
+    from psycopg2.errorcodes import UNIQUE_VIOLATION
+    USING_POSTGRES = True
+except ImportError:
+    USING_POSTGRES = False
 
 from rest_framework import authentication
 from rest_framework import exceptions
@@ -108,5 +113,5 @@ class CognitoAuthentication(authentication.BaseAuthentication):
             except IntegrityError as e:
                 # if it's an unique violation, it means a concurrent request
                 # already added this tag to the style, so we can ignore it
-                if e.__cause__.pgcode != UNIQUE_VIOLATION:  # pylint: disable=no-member
-                    raise e
+                if not USING_POSTGRES or e.__cause__.pgcode != UNIQUE_VIOLATION:  # pylint: disable=no-member
+                        raise e
