@@ -101,7 +101,7 @@ class CognitoAuthTestCase(DjangoTestCase):
         user = User.objects.get(email='test@email.com')
         group = Group.objects.get(name='test_group')
         self.assertEqual(user.email, 'test@email.com')
-        self.assertEqual(user.username, 'test_cognito_id')
+        self.assertEqual(user.username, 'test@email.com')
         self.assertEqual(user.username, set_user.username)
         self.assertEqual(Group.objects.count(), 1)
         self.assertEqual(user.groups.count(), 1)
