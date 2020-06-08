@@ -3,11 +3,14 @@ import logging
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.urls import path, include
+from django.contrib.auth import login as django_login
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from cognito_code_grant.helpers import get_cookie_domain
+from cognito_code_grant.authentication import CognitoAuthentication
+
 
 import requests
 
@@ -22,9 +25,10 @@ logger = logging.getLogger(__package__)
 def login(request):
     auth_redirect_url: str = request.build_absolute_uri().split('?')[0]
     # since the app is running in container, no way to know its on ssl
-    auth_redirect_url = auth_redirect_url.replace('http', 'https')
+    if 'https' not in auth_redirect_url:
+        auth_redirect_url = auth_redirect_url.replace('http', 'https')
     auth_code: str = request.query_params.get('code', '')
-    app_redirect_url: str = request.query_params.get('state', '')
+    app_redirect_url: str = request.query_params.get('state', settings.AUTH_COGNITO_REDIRECT_URL)
 
     cognito_reply = requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
         'grant_type': 'authorization_code',
@@ -40,7 +44,6 @@ def login(request):
                        e.response.status_code, e.response.content)
         return HttpResponse('Unauthorized', status=401)
     tokens: dict = cognito_reply.json()
-    response = HttpResponseRedirect(app_redirect_url)
     cookie_domain = get_cookie_domain(request)
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
@@ -51,8 +54,10 @@ def login(request):
                 expiry_time = 60 * 60
             response.set_cookie(
                 token_type, tokens[token_type], domain=cookie_domain, expires=expiry_time)
-    return response
-
+    auth = CognitoAuthentication()
+    user = auth.authenticate(request)
+    django_login(request, user[0])
+    return HttpResponseRedirect(app_redirect_url)
 
 @api_view(['GET'])
 @authentication_classes([])
