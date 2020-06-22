@@ -2,8 +2,7 @@ import logging
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
-from django.urls import include
-from django.conf.urls import url
+from django.conf.urls import url, include
 from django.contrib.auth import login as django_login
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
