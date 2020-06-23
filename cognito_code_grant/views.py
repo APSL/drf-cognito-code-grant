@@ -45,6 +45,7 @@ def login(request):
         return HttpResponse('Unauthorized', status=401)
     tokens: dict = cognito_reply.json()
     cookie_domain = get_cookie_domain(request)
+    response = HttpResponseRedirect(app_redirect_url)
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
         if getattr(settings, 'SHARED_TOKENS', None):
@@ -57,7 +58,7 @@ def login(request):
     auth = CognitoAuthentication()
     user = auth.authenticate(request)
     django_login(request, user[0])
-    return HttpResponseRedirect(app_redirect_url)
+    return response
 
 @api_view(['GET'])
 @authentication_classes([])
