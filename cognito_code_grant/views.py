@@ -28,6 +28,8 @@ def login(request):
         auth_redirect_url = auth_redirect_url.replace('http', 'https')
     auth_code: str = request.query_params.get('code', '')
     id_token: str = request.query_params.get('id_token', '')
+    access_token: str = request.query_params.get('access_token', '')
+    refresh_token: str = request.query_params.get('refresh_token', '')
     app_redirect_url: str = request.query_params.get('state', settings.AUTH_COGNITO_REDIRECT_URL)
 
     if not id_token:
@@ -48,8 +50,8 @@ def login(request):
     else:
         tokens: dict = {
             'id_token': id_token,
-            'refresh_token': '',
-            'access_token': '',
+            'refresh_token': refresh_token,
+            'access_token': access_token,
         }
     response = HttpResponseRedirect(app_redirect_url)
     for token_type in TOKEN_TYPES:
