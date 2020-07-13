@@ -23,7 +23,17 @@ logger = logging.getLogger(__package__)
 @permission_classes([AllowAny])
 def login(request):
     app_redirect_url: str = request.query_params.get('state', settings.AUTH_COGNITO_REDIRECT_URL)
+    id_token: str = request.query_params.get('id_token', '')
+    access_token: str = request.query_params.get('access_token', '')
+    refresh_token: str = request.query_params.get('refresh_token', '')
     response = HttpResponseRedirect(app_redirect_url)
+    tokens: dict = {
+        'id_token': id_token,
+        'refresh_token': refresh_token,
+        'access_token': access_token,
+    }
+    for token_type in TOKEN_TYPES:
+        request.session[token_type] = tokens[token_type]
     auth = CognitoAuthentication()
     user = auth.authenticate(request)
     django_login(request, user[0])
