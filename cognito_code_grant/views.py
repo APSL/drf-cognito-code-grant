@@ -22,47 +22,8 @@ logger = logging.getLogger(__package__)
 @authentication_classes([])
 @permission_classes([AllowAny])
 def login(request):
-    auth_redirect_url: str = request.build_absolute_uri().split('?')[0]
-    # since the app is running in container, no way to know its on ssl
-    if 'https' not in auth_redirect_url:
-        auth_redirect_url = auth_redirect_url.replace('http', 'https')
-    auth_code: str = request.query_params.get('code', '')
-    id_token: str = request.query_params.get('id_token', '')
-    access_token: str = request.query_params.get('access_token', '')
-    refresh_token: str = request.query_params.get('refresh_token', '')
     app_redirect_url: str = request.query_params.get('state', settings.AUTH_COGNITO_REDIRECT_URL)
-
-    if not id_token:
-        cognito_reply = requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
-            'grant_type': 'authorization_code',
-            'code': auth_code,
-            'client_id': settings.AUTH_COGNITO_CLIENT_ID,
-            'redirect_uri': auth_redirect_url
-        })
-
-        try:
-            cognito_reply.raise_for_status()
-        except requests.exceptions.HTTPError as e:
-            logger.warning("Auth request failed with status %s: %s",
-                           e.response.status_code, e.response.content)
-            return HttpResponse('Unauthorized', status=401)
-        tokens: dict = cognito_reply.json()
-    else:
-        tokens: dict = {
-            'id_token': id_token,
-            'refresh_token': refresh_token,
-            'access_token': access_token,
-        }
     response = HttpResponseRedirect(app_redirect_url)
-    for token_type in TOKEN_TYPES:
-        request.session[token_type] = tokens[token_type]
-        if getattr(settings, 'SHARED_TOKENS', None):
-            if token_type == 'refresh_token':
-                expiry_time = 60 * 60 * 30
-            else:
-                expiry_time = 60 * 60
-            response.set_cookie(
-                token_type, tokens[token_type], expires=expiry_time)
     auth = CognitoAuthentication()
     user = auth.authenticate(request)
     django_login(request, user[0])
@@ -73,13 +34,9 @@ def login(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def logout(request):
-    app_redirect_url: str = request.query_params.get('state', '')
+    app_redirect_url: str = request.query_params.get('state', settings.AUTH_COGNITO_REDIRECT_URL)
     response = HttpResponseRedirect(app_redirect_url)
     request.session.flush()
-    if getattr(settings, 'SHARED_TOKENS', None):
-        cookie_domain = get_cookie_domain(request)
-        for token_type in TOKEN_TYPES:
-            response.delete_cookie(token_type, domain=cookie_domain)
     return response
 
 
