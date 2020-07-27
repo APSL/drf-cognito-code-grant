@@ -72,7 +72,7 @@ class CognitoAuthentication(authentication.BaseAuthentication):
 
         if not access_token:
             # auth not attempted
-            return None
+            raise exceptions.AuthenticationFailed('Failed to fetch new tokens - invalid access token')
 
         try:
             _verify_token_and_decode(access_token)
