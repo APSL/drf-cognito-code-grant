@@ -70,10 +70,6 @@ class CognitoAuthentication(authentication.BaseAuthentication):
         id_token = self.get_token(request, 'id_token')
         refresh_token = self.get_token(request, 'refresh_token')
 
-        if not access_token:
-            # auth not attempted
-            raise exceptions.AuthenticationFailed('Failed to fetch new tokens - invalid access token')
-
         try:
             _verify_token_and_decode(access_token)
         except jwt.JWTError:
