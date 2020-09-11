@@ -48,6 +48,6 @@ def logout(request):
 
 def include_auth_urls():
     return include([
-        url(r'^login/', login),
-        url(r'^logout/', logout)
+        url(r'^login/', login, name="cognito-login"),
+        url(r'^logout/', logout, name="cognito-logout")
     ])
