@@ -32,7 +32,11 @@ def login(request):
         'refresh_token': refresh_token,
         'access_token': access_token,
     }
-    auth_by_jwt_tokens(request, tokens)
+    for token_type in TOKEN_TYPES:
+        request.session[token_type] = tokens[token_type]
+    auth = CognitoAuthentication()
+    user = auth.authenticate(request)
+    django_login(request, user[0])
     return response
 
 
