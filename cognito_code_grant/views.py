@@ -26,7 +26,7 @@ def login(request):
     code: str = request.query_params.get('code', '')
     state: str = request.query_params.get('state')
     if code:
-        tokens: dict = get_tokens_by_code(code, state)
+        tokens: dict = get_tokens_by_code(code)
     else:
         id_token: str = request.query_params.get('id_token', '')
         access_token: str = request.query_params.get('access_token', '')
@@ -46,12 +46,12 @@ def login(request):
     return response
 
 
-def get_tokens_by_code(code, redirect_uri):
+def get_tokens_by_code(code):
     cognito_reply = requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
         'grant_type': 'authorization_code',
         'code': code,
         'client_id': settings.AUTH_COGNITO_CLIENT_ID,
-        'redirect_uri': redirect_uri
+        'redirect_uri': settings.AUTH_COGNITO_REDIRECT_URL
     })
 
     try:
