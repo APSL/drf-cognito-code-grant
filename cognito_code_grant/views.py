@@ -49,7 +49,7 @@ def login(request):
 def get_tokens_by_code(code, redirect_uri):
     cognito_reply = requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
         'grant_type': 'authorization_code',
-        'code': auth_code,
+        'code': code,
         'client_id': settings.AUTH_COGNITO_CLIENT_ID,
         'redirect_uri': redirect_uri
     })
