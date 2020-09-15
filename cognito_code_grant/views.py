@@ -23,21 +23,44 @@ logger = logging.getLogger(__package__)
 @permission_classes([AllowAny])
 def login(request):
     app_redirect_url: str = request.query_params.get('redirect_uri', settings.AUTH_COGNITO_REDIRECT_URL)
-    id_token: str = request.query_params.get('id_token', '')
-    access_token: str = request.query_params.get('access_token', '')
-    refresh_token: str = request.query_params.get('refresh_token', '')
-    response = HttpResponseRedirect(app_redirect_url)
-    tokens: dict = {
-        'id_token': id_token,
-        'refresh_token': refresh_token,
-        'access_token': access_token,
-    }
+    code: str = request.query_params.get('code', '')
+    state: str = request.query_params.get('state')
+    if code:
+        tokens: dict = get_tokens_by_code(code, state)
+    else:
+        id_token: str = request.query_params.get('id_token', '')
+        access_token: str = request.query_params.get('access_token', '')
+        refresh_token: str = request.query_params.get('refresh_token', '')
+        tokens: dict = {
+            'id_token': id_token,
+            'refresh_token': refresh_token,
+            'access_token': access_token,
+        }
+
+    response = HttpResponseRedirect(state or app_redirect_url)
     for token_type in TOKEN_TYPES:
         request.session[token_type] = tokens[token_type]
     auth = CognitoAuthentication()
     user = auth.authenticate(request)
     django_login(request, user[0])
     return response
+
+
+def get_tokens_by_code(code, redirect_uri):
+    cognito_reply = requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
+        'grant_type': 'authorization_code',
+        'code': auth_code,
+        'client_id': settings.AUTH_COGNITO_CLIENT_ID,
+        'redirect_uri': redirect_uri
+    })
+
+    try:
+        cognito_reply.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.warning("Auth request failed with status %s: %s",
+                       e.response.status_code, e.response.content)
+        return HttpResponse('Unauthorized', status=401)
+    return cognito_reply.json()
 
 
 @api_view(['GET'])
