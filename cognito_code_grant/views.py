@@ -51,7 +51,7 @@ def get_tokens_by_code(code):
         'grant_type': 'authorization_code',
         'code': code,
         'client_id': settings.AUTH_COGNITO_CLIENT_ID,
-        'redirect_uri': settings.AUTH_COGNITO_REDIRECT_URL
+        'redirect_uri': settings.SITE_LOGIN_URL
     })
 
     try:
