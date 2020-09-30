@@ -1,15 +1,19 @@
+import json
+import base64
 import logging
 
 from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
 from django.conf.urls import url, include
 from django.contrib.auth import login as django_login
+from django.contrib import messages
 from rest_framework.decorators import api_view
 from rest_framework.decorators import authentication_classes
 from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from cognito_code_grant.helpers import get_cookie_domain
 from cognito_code_grant.authentication import CognitoAuthentication
+
 
 import requests
 
@@ -22,9 +26,15 @@ logger = logging.getLogger(__package__)
 @authentication_classes([])
 @permission_classes([AllowAny])
 def login(request):
-    app_redirect_url: str = request.query_params.get('redirect_uri', settings.AUTH_COGNITO_REDIRECT_URL)
-    code: str = request.query_params.get('code', '')
     state: str = request.query_params.get('state')
+    app_redirect_url: str = request.query_params.get('redirect_uri', settings.AUTH_COGNITO_REDIRECT_URL)
+    error_message = request.query_params.get("error_description")
+    code: str = request.query_params.get('code', '')
+    if error_message:
+        json_error_message = base64.b64decode(error_message.split("@", 1)[1]).decode("utf-8")
+        error_message = json.loads(json_error_message)[request.LANGUAGE_CODE]
+        messages.error(request, error_message)
+        return HttpResponseRedirect(app_redirect_url)
     if code:
         tokens: dict = get_tokens_by_code(code)
     else:
