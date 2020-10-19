@@ -27,7 +27,7 @@ logger = logging.getLogger(__package__)
 @permission_classes([AllowAny])
 def login(request):
     state: str = request.query_params.get('state')
-    app_redirect_url: str = request.query_params.get('redirect_uri', settings.AUTH_COGNITO_REDIRECT_URL)
+    app_redirect_url: str = request.query_params.get('redirect_uri') or settings.AUTH_COGNITO_REDIRECT_URL
     error_message = request.query_params.get("error_description")
     code: str = request.query_params.get('code', '')
     if error_message:
