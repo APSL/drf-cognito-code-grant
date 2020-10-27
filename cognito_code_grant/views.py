@@ -37,7 +37,7 @@ def login(request):
         else:
             error_message = json.loads(json_error_message)
         messages.error(request, error_message)
-        return HttpResponseRedirect(app_redirect_url)
+        return HttpResponseRedirect(settings.LOGIN_FORM_VIEW_URL)
     if code:
         tokens: dict = get_tokens_by_code(code)
     else:
