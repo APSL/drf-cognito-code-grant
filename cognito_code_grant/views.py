@@ -32,7 +32,10 @@ def login(request):
     code: str = request.query_params.get('code', '')
     if error_message:
         json_error_message = base64.b64decode(error_message.split("@", 1)[1]).decode("utf-8")
-        error_message = json.loads(json_error_message)[request.LANGUAGE_CODE]
+        if isinstance(json.loads(json_error_message), dict):
+            error_message = json.loads(json_error_message)[request.LANGUAGE_CODE]
+        else:
+            error_message = json.loads(json_error_message)
         messages.error(request, error_message)
         return HttpResponseRedirect(app_redirect_url)
     if code:
