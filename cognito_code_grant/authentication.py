@@ -5,6 +5,7 @@ from django.contrib.auth.models import User, Group
 
 try:
     from psycopg2.errorcodes import UNIQUE_VIOLATION
+
     USING_POSTGRES = True
 except ImportError:
     USING_POSTGRES = False
@@ -12,7 +13,6 @@ except ImportError:
 from rest_framework import authentication
 from rest_framework import exceptions
 from jose import jwt
-
 
 import requests
 
@@ -48,10 +48,10 @@ def _fetch_cognito_keys():
 
 def _refresh_tokens(refresh_token: str):
     return requests.post(settings.AUTH_COGNITO_CODE_GRANT_URL, data={
-            'grant_type': 'refresh_token',
-            'refresh_token': refresh_token,
-            'client_id': settings.AUTH_COGNITO_CLIENT_ID
-        }).json()
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token,
+        'client_id': settings.AUTH_COGNITO_CLIENT_ID
+    }).json()
 
 
 class CognitoAuthentication(authentication.BaseAuthentication):
@@ -92,7 +92,11 @@ class CognitoAuthentication(authentication.BaseAuthentication):
     def set_user(self, decoded_id_token: dict):
         email = decoded_id_token['email'].lower()
         user_id = decoded_id_token['cognito:username']
-        user, _ = User.objects.get_or_create(email__iexact=email, defaults={'username': email, 'email': email})
+        first_name = decoded_id_token.get("name")
+        user, _ = User.objects.get_or_create(
+            email__iexact=email,
+            defaults={'username': email, 'email': email, 'first_name': first_name}
+        )
         self.set_groups(user, decoded_id_token)
 
         return user
@@ -110,4 +114,4 @@ class CognitoAuthentication(authentication.BaseAuthentication):
                 # if it's an unique violation, it means a concurrent request
                 # already added this tag to the style, so we can ignore it
                 if not USING_POSTGRES or e.__cause__.pgcode != UNIQUE_VIOLATION:  # pylint: disable=no-member
-                        raise e
+                    raise e
