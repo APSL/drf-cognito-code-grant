@@ -95,7 +95,7 @@ class CognitoAuthentication(authentication.BaseAuthentication):
         first_name = decoded_id_token.get("name")
         user, _ = User.objects.get_or_create(
             email__iexact=email,
-            defaults={'username': user_id, 'email': email, 'first_name': first_name}
+            defaults={'username': email, 'email': email, 'first_name': first_name}
         )
         self.set_groups(user, decoded_id_token)
 
